@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { club, room, tiers, type ZoneId } from "@/lib/data";
+import { Keycap, KeyLegend } from "./keycap";
 
 // ---------- zones and seats ----------
 
@@ -303,30 +304,27 @@ export function Booking() {
               </span>
             ))}
           </div>
-          <div className="mt-1 grid grid-cols-7 gap-1">
+          <div className="mt-1 grid grid-cols-7 gap-x-1 gap-y-1.5">
             {cells.map((d, i) => {
               if (!d) return <span key={`e${i}`} />;
               const off = d < today || d > lastDay;
               const on = sameDay(d, date);
               return (
-                <button
+                <Keycap
                   key={keyOf(d)}
-                  type="button"
-                  disabled={off}
-                  aria-pressed={on}
-                  aria-label={dayFmt.format(d)}
+                  state={on ? "on" : off ? "busy" : "free"}
+                  h={42}
+                  r={10}
+                  ariaLabel={dayFmt.format(d)}
                   onClick={() => {
                     setDate(d);
                     if (sameDay(d, today) && hour !== null && now && hour <= now.getHours()) {
                       setHour(Math.min(now.getHours() + 1, 23));
                     }
                   }}
-                  className={`seat h-10 rounded-[10px] text-[14px] tabular-nums ${
-                    on ? "bg-neon font-semibold text-black" : off ? "text-[#4d6355]" : "bg-surface-2"
-                  }`}
                 >
-                  {d.getDate()}
-                </button>
+                  <span className="relative">{d.getDate()}</span>
+                </Keycap>
               );
             })}
           </div>
@@ -334,23 +332,14 @@ export function Booking() {
 
         <div className="rounded-tile bg-surface p-5 md:p-6">
           <h3 className="font-sans text-[18px] font-medium tracking-normal">Начало</h3>
-          <div className="mt-4 grid grid-cols-6 gap-1">
+          <div className="mt-4 grid grid-cols-6 gap-x-1 gap-y-1.5">
             {Array.from({ length: 24 }, (_, h) => {
               const off = hourDisabled(h);
               const on = hour === h;
               return (
-                <button
-                  key={h}
-                  type="button"
-                  disabled={off}
-                  aria-pressed={on}
-                  onClick={() => setHour(h)}
-                  className={`seat h-11 rounded-[12px] text-[14px] tabular-nums ${
-                    on ? "bg-neon font-semibold text-black" : off ? "text-[#4d6355]" : "bg-surface-2"
-                  }`}
-                >
-                  {hh(h)}
-                </button>
+                <Keycap key={h} state={on ? "on" : off ? "busy" : "free"} h={46} r={12} onClick={() => setHour(h)}>
+                  <span className="relative">{hh(h)}</span>
+                </Keycap>
               );
             })}
           </div>
@@ -392,23 +381,23 @@ export function Booking() {
           {zones.map((z) => {
             const on = z.id === zoneId;
             return (
-              <button
+              <Keycap
                 key={z.id}
-                type="button"
-                aria-pressed={on}
+                state={on ? "on" : "free"}
+                h={88}
+                r={16}
+                wide
+                fw={600}
                 onClick={() => {
                   setZoneId(z.id);
                   setSeat(null);
                 }}
-                className={`flex min-h-[72px] flex-col items-start justify-between rounded-tile p-4 text-left transition-colors duration-150 ${
-                  on ? "bg-neon text-black" : "bg-surface hover:bg-surface-2"
-                }`}
               >
-                <span className="text-[18px] font-semibold">{z.name}</span>
-                <span className={`text-[14px] tabular-nums ${on ? "text-black" : "text-soft"}`}>
+                <span className="relative text-[18px] font-semibold leading-tight">{z.name}</span>
+                <span className={`relative text-[14px] leading-snug tabular-nums ${on ? "" : "opacity-70"}`}>
                   {z.price} ₽ в час{z.id === "room" ? " за двоих" : ""}
                 </span>
-              </button>
+              </Keycap>
             );
           })}
         </div>
@@ -428,39 +417,39 @@ export function Booking() {
           </div>
 
           {zone.id === "room" ? (
-            <button
-              type="button"
-              disabled={!!busy.get("Комната")}
-              aria-pressed={seat === "Комната"}
-              onClick={() => setSeat("Комната")}
-              className={`seat mt-5 flex h-[140px] w-full flex-col items-start justify-end gap-1 rounded-[14px] p-5 text-left ${
-                seat === "Комната" ? "bg-neon text-black" : busy.get("Комната") ? "bg-black text-[#4d6355]" : "bg-surface-2"
-              }`}
-            >
-              <span className="text-[20px] font-semibold">Два места, своя дверь</span>
-              <span className="text-[16px]">
-                {busy.get("Комната") ? "Занята, выбери другое время" : "Нажми, чтобы выбрать комнату целиком"}
-              </span>
-            </button>
+            <div className="mt-5">
+              <Keycap
+                state={seat === "Комната" ? "on" : busy.get("Комната") ? "busy" : "free"}
+                h={140}
+                r={14}
+                wide
+                end
+                pad={18}
+                onClick={() => setSeat("Комната")}
+              >
+                <span className="relative text-[20px] font-semibold">Два места, своя дверь</span>
+                <span className="relative text-[16px]">
+                  {busy.get("Комната") ? "Занята, выбери другое время" : "Нажми, чтобы выбрать комнату целиком"}
+                </span>
+              </Keycap>
+            </div>
           ) : (
-            <div className={`mt-5 grid gap-1.5 ${zone.cols}`}>
+            <div className={`mt-5 grid gap-x-1.5 gap-y-2 ${zone.cols}`}>
               {zone.seats.map((s) => {
                 const taken = !!busy.get(s);
-                const on = seat === s;
                 return (
-                  <button
+                  <Keycap
                     key={s}
-                    type="button"
-                    disabled={taken}
-                    aria-pressed={on}
-                    aria-label={`Место ${s}${taken ? ", занято" : ""}`}
+                    state={seat === s ? "on" : taken ? "busy" : "free"}
+                    h={46}
+                    r={10}
+                    fs={16}
+                    strike
+                    ariaLabel={`Место ${s}${taken ? ", занято" : ""}`}
                     onClick={() => setSeat(s)}
-                    className={`seat flex h-11 items-center justify-center rounded-[10px] text-[16px] font-medium tabular-nums ${
-                      on ? "bg-neon text-black" : taken ? "bg-black text-[#4d6355] line-through" : "bg-surface-2"
-                    }`}
                   >
-                    {s}
-                  </button>
+                    <span className="relative">{s}</span>
+                  </Keycap>
                 );
               })}
             </div>
@@ -468,13 +457,13 @@ export function Booking() {
 
           <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-soft" aria-label="Обозначения">
             <li className="flex items-center gap-2">
-              <span className="size-3.5 rounded-[4px] bg-surface-2" aria-hidden="true" /> свободно
+              <KeyLegend state="free" /> свободно
             </li>
             <li className="flex items-center gap-2">
-              <span className="size-3.5 rounded-[4px] bg-black" aria-hidden="true" /> занято
+              <KeyLegend state="busy" /> занято
             </li>
             <li className="flex items-center gap-2">
-              <span className="size-3.5 rounded-[4px] bg-neon" aria-hidden="true" /> твой выбор
+              <KeyLegend state="on" /> твой выбор
             </li>
           </ul>
         </div>
