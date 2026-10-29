@@ -1,0 +1,446 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-text);
+  --font-heading: var(--font-text);
+  --font-display: var(--font-display);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* CompClub type scale as utilities: text-small … text-h1 */
+  --text-small: var(--t-small);
+  --text-body: var(--t-body);
+  --text-lead: var(--t-lead);
+  --text-h3: var(--t-h3);
+  --text-h2: var(--t-h2);
+  --text-h1: var(--t-h1);
+
+  /* CompClub roles */
+  --color-ground: var(--cc-ground);
+  --color-ink: var(--cc-ink);
+  --color-soft: var(--cc-soft);
+  --color-surface: var(--cc-surface);
+  --color-surface-2: var(--cc-surface-2);
+  --color-field: var(--cc-field);
+  --color-neon: var(--cc-neon);
+  --color-mint-1: var(--cc-mint-1);
+  --color-mint-3: var(--cc-mint-3);
+  --color-mint-4: var(--cc-mint-4);
+  --radius-tile: var(--cc-radius);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  /* Palette: black ground, white ink, one neon green, a run of greens */
+  --cc-ground: #000000;
+  --cc-ink: #ffffff;
+  --cc-soft: #a9c2b1;
+  --cc-surface: #0a170e;
+  --cc-surface-2: #11241a;
+  --cc-field: #0c3b1f;
+  --cc-neon: #3dff7a;
+  --cc-mint-1: #d6ffe1;
+  --cc-mint-3: #26b35a;
+  --cc-mint-4: #145f31;
+  --cc-radius: 16px;
+
+  /* One type scale for the whole site */
+  --t-small: 0.875rem; /* 14 */
+  --t-body: 1rem; /* 16 */
+  --t-lead: 1.125rem; /* 18 */
+  --t-h3: 1.25rem; /* 20 */
+  --t-h2: clamp(1.75rem, 1.4rem + 1.2vw, 2.375rem); /* 28–38 */
+  --t-h1: clamp(2.75rem, 1.8rem + 4.2vw, 5rem); /* 44–80 */
+  --gutter: clamp(16px, 3vw, 32px);
+  --section: clamp(64px, 8vw, 112px);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* shadcn roles mapped to the palette (the site is dark only) */
+  --background: var(--cc-ground);
+  --foreground: var(--cc-ink);
+  --card: var(--cc-surface);
+  --card-foreground: var(--cc-ink);
+  --popover: var(--cc-surface);
+  --popover-foreground: var(--cc-ink);
+  --primary: var(--cc-neon);
+  --primary-foreground: #000000;
+  --secondary: var(--cc-surface-2);
+  --secondary-foreground: var(--cc-ink);
+  --muted: var(--cc-surface);
+  --muted-foreground: var(--cc-soft);
+  --accent: var(--cc-surface-2);
+  --accent-foreground: var(--cc-ink);
+  --destructive: #ff6b6b;
+  --border: #1f3a29;
+  --input: #1f3a29;
+  --ring: var(--cc-neon);
+  --radius: 0.625rem;
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+    background: var(--cc-ground);
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--cc-ground);
+    color: var(--cc-ink);
+    font-size: var(--t-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  h2 {
+    font-size: var(--t-h2);
+  }
+  h3 {
+    font-size: var(--t-h3);
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: var(--cc-neon);
+    color: #000;
+  }
+  :focus-visible {
+    outline: 2px solid var(--cc-neon);
+    outline-offset: 3px;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---------- Layout helpers ---------- */
+.wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.section {
+  padding-top: var(--section);
+}
+.lead {
+  font-size: var(--t-lead);
+  line-height: 1.55;
+}
+
+/* ---------- Picture frame: rounded corners, neon strokes on two diagonal corners ---------- */
+.frame {
+  position: relative;
+  border-radius: var(--cc-radius);
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--cc-surface);
+}
+.frame > img {
+  border-radius: inherit;
+}
+.frame::before,
+.frame::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  width: clamp(28px, 12%, 56px);
+  aspect-ratio: 1;
+  border: 0 solid var(--cc-neon);
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px rgb(61 255 122 / 0.8)); /* taste-skill-ignore: neon corner stroke asked for in the brief */
+}
+.frame::before {
+  top: 0;
+  left: 0;
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-left-radius: var(--cc-radius);
+}
+.frame::after {
+  right: 0;
+  bottom: 0;
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+  border-bottom-right-radius: var(--cc-radius);
+}
+
+/* ---------- Buttons: one shape (pill), flat fill ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: 44px;
+  padding: 0 1.25em;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: var(--t-body);
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-neon {
+  background: var(--cc-neon);
+  color: #000;
+}
+.btn-neon:hover {
+  background: var(--cc-mint-1);
+}
+.btn-ghost {
+  background: var(--cc-surface-2);
+  color: var(--cc-ink);
+}
+.btn-ghost:hover {
+  background: var(--cc-mint-4);
+}
+.btn-ink {
+  background: #000;
+  color: var(--cc-ink);
+}
+.btn-ink:hover {
+  background: var(--cc-surface-2);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---------- Entrance reveal (only when JS runs) ---------- */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 600ms var(--ease-out),
+    transform 600ms var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+.js [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ---------- Hero: the name, then the fan's faint outline, then the lamp behind it ---------- */
+@keyframes cc-name-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.06em);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@keyframes cc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hero geometry, measured in Figma for Unbounded ExtraBold at -4% tracking:
+   "CompClub" ink is 6.324em wide with a 0.035em left bearing; cap top 0.11em, baseline 0.897em. */
+.hero {
+  container-type: inline-size;
+}
+.hero-inner {
+  /* name size that spans the page between the two gutters */
+  --S: calc((100cqw - 2 * var(--gutter)) / 6.324);
+  /* the fan: its lower third is the height of the letters on wide screens */
+  --fan: min(66svh, max(2.75 * var(--S), 80cqw), 780px);
+}
+.hero-stage {
+  height: calc(var(--fan) * 1.05);
+}
+.hero-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--S);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  /* cap top on the start of the fan's lower third (the fan sits 0.025 × fan above the stage foot) */
+  margin-top: calc(-0.3083 * var(--fan) - 0.11 * var(--S));
+  margin-left: calc(var(--gutter) - 0.035 * var(--S));
+  animation: cc-name-in 900ms var(--ease-out) both;
+}
+/* the marquee starts at 72% of the cap height and runs down past the fan's foot */
+.hero-marquee {
+  display: flex;
+  align-items: center;
+  margin-top: calc(-0.323 * var(--S));
+  height: max(44px, calc(var(--fan) / 3 - 0.567 * var(--S) + 2px));
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(18px, 0.17 * var(--S), 40px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.hero-after {
+  animation: cc-fade-up 700ms var(--ease-out) 3s both;
+}
+
+/* The lamp behind the fan's centre: a matte RGB light with a warm white core. Its opacity and
+   size are driven from the fan scene so it comes up in step with the 3D lighting. */
+.fan-lamp {
+  --lamp: 0.72;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--fan) * 1.25);
+  aspect-ratio: 1;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--lamp));
+  pointer-events: none;
+}
+.fan-lamp-rgb {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient( /* taste-skill-ignore: matte RGB light asked for in the brief */
+    from 0deg,
+    #ff2a6d,
+    #ffb300,
+    #e8ff3d,
+    #3dff7a,
+    #2ee6ff,
+    #4d6bff,
+    #c03dff,
+    #ff2a6d
+  );
+  -webkit-mask: radial-gradient(closest-side, #000 20%, rgb(0 0 0 / 0.55) 55%, transparent 100%); /* taste-skill-ignore: fades the light outwards */
+  mask: radial-gradient(closest-side, #000 20%, rgb(0 0 0 / 0.55) 55%, transparent 100%); /* taste-skill-ignore: fades the light outwards */
+  filter: blur(40px) saturate(0.85);
+  animation: cc-spin 18s linear infinite;
+}
+.fan-lamp-core {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0)); /* taste-skill-ignore: the bulb */
+  filter: blur(24px);
+  mix-blend-mode: screen;
+}
+
+/* ---------- Marquee ---------- */
+@keyframes cc-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: cc-marquee 32s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-name,
+  .hero-after,
+  .marquee-track,
+  .fan-lamp-rgb {
+    animation: none;
+  }
+  .fan-lamp {
+    opacity: 1;
+    --lamp: 1;
+  }
+}
+
+/* ---------- Booking seats ---------- */
+.seat {
+  transition:
+    background-color 140ms var(--ease-out),
+    color 140ms var(--ease-out),
+    transform 140ms var(--ease-out);
+}
+.seat:not(:disabled):hover {
+  background: var(--cc-mint-4);
+}
+.seat:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+/* details marker off for the bar menu */
+.menu-bar > summary {
+  list-style: none;
+}
+.menu-bar > summary::-webkit-details-marker {
+  display: none;
+}
+.menu-bar[open] .menu-plus {
+  transform: rotate(45deg);
+}
+.menu-plus {
+  transition: transform 200ms var(--ease-out);
+}
