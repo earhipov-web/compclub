@@ -1,14 +1,8 @@
 import { FanScene } from "./fan-scene";
-
-const links = [
-  { href: "#computers", label: "Компьютеры" },
-  { href: "#booking", label: "Бронь" },
-  { href: "#room", label: "Комната" },
-  { href: "#bar", label: "Снек-бар" },
-];
+import { SiteNav } from "./site-nav";
 
 const facts = [
-  { value: "50 мест", label: "три класса ПК" },
+  { value: "51 место", label: "три зала" },
   { value: "от 100 ₽", label: "за час игры" },
   { value: "RTX 5090", label: "в классе VIP" },
   { value: "24/7", label: "без выходных" },
@@ -26,23 +20,7 @@ export function Hero() {
   const run = Array.from({ length: 4 }, () => MARQUEE);
   return (
     <header id="top" className="hero relative flex min-h-[100svh] flex-col overflow-hidden bg-black">
-      <nav aria-label="Разделы" className="wrap relative z-20 flex h-16 shrink-0 items-center justify-between gap-6">
-        <a href="#top" className="text-lead font-semibold tracking-[-0.01em]">
-          CompClub
-        </a>
-        <ul className="hidden items-center gap-7 md:flex">
-          {links.map((l) => (
-            <li key={l.href}>
-              <a href={l.href} className="text-soft transition-colors hover:text-ink">
-                {l.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <a href="#booking" className="btn btn-neon">
-          Забронировать
-        </a>
-      </nav>
+      <SiteNav current="/" />
 
       <div className="hero-inner relative flex flex-1 flex-col justify-center md:justify-end">
         {/* Stage: 1.05 × the fan, the fan centred in it */}
@@ -51,7 +29,7 @@ export function Hero() {
         </div>
 
         <h1 className="hero-name relative z-10">
-          CompClub<span className="sr-only">: компьютерный клуб на 50 мест</span>
+          CompClub<span className="sr-only">: компьютерный клуб на 51 место</span>
         </h1>
 
         <div className="marquee hero-marquee relative z-20 overflow-hidden bg-neon text-black" aria-hidden="true">

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Onest, Unbounded } from "next/font/google";
+import { PageTransition } from "@/components/page-transition";
 import "./globals.css";
 
 const text = Onest({
@@ -17,9 +18,12 @@ const display = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: "CompClub: компьютерный клуб на 50 мест",
+  title: {
+    default: "CompClub: компьютерный клуб на 51 место",
+    template: "%s · CompClub",
+  },
   description:
-    "Три класса игровых ПК от 100 ₽ в час, приватная комната на двоих с 4K-мониторами 240 Гц, снек-бар и онлайн-бронь места.",
+    "Общий зал на 25 мест, буткемп на 20 и три VIP-комнаты на двоих. Игровые ПК от 100 ₽ в час, снек-бар и онлайн-бронь места.",
 };
 
 export const viewport: Viewport = {
@@ -34,7 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className={`${text.variable} ${display.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <PageTransition />
+      </body>
     </html>
   );
 }

@@ -535,3 +535,132 @@
 .menu-plus {
   transition: transform 200ms var(--ease-out);
 }
+
+/* ---------- Dot loader (components/ui/abstract-cube-isometric-loader) ---------- */
+@keyframes dot-idle {
+  0%,
+  100% {
+    opacity: 0.08;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 0.22;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes dot-active {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes dot-orbit {
+  0% {
+    opacity: 0.15;
+    transform: scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  60% {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0.15;
+    transform: scale(0.8);
+  }
+}
+
+/* the component ships its markup and variables only: a 5 × 5 grid of round dots */
+.dot-loader {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--dot-size));
+  grid-template-rows: repeat(var(--rows), var(--dot-size));
+  gap: var(--gap);
+}
+.dot-loader > span {
+  grid-column: var(--x);
+  grid-row: var(--y);
+  border-radius: 50%;
+  background: var(--dot-color);
+  opacity: var(--idle-opacity);
+  animation: dot-idle calc(var(--speed) * 1.5) ease-in-out var(--delay) infinite;
+}
+.dot-loader > span.active {
+  animation-name: dot-active;
+  animation-duration: var(--speed);
+}
+.dot-loader[data-motion="orbit"] > span.active {
+  animation-name: dot-orbit;
+}
+.dot-loader.has-bloom > span.active {
+  box-shadow: 0 0 calc(var(--dot-size) * 1.6) var(--dot-color); /* taste-skill-ignore: the loader's bloom option */
+}
+@media (prefers-reduced-motion: reduce) {
+  .dot-loader > span {
+    animation: none;
+  }
+  .dot-loader > span.active {
+    opacity: 1;
+  }
+}
+
+/* ---------- Page change: a short black screen with the loader ---------- */
+@keyframes cc-veil-in {
+  from {
+    opacity: 0;
+  }
+}
+.page-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--cc-ground);
+  color: var(--cc-neon);
+  animation: cc-veil-in 160ms var(--ease-out) both;
+  transition: opacity 300ms var(--ease-out);
+}
+.page-veil[data-state="out"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Inner page header: text, then the photo, then the facts ---------- */
+.page-intro {
+  animation: cc-fade-up 700ms var(--ease-out) 60ms both;
+}
+.page-photo {
+  animation: cc-fade-up 800ms var(--ease-out) 180ms both;
+}
+.page-facts {
+  animation: cc-fade-up 700ms var(--ease-out) 320ms both;
+}
+html[data-veil] :is(.page-intro, .page-photo, .page-facts, .hero-name, .hero-after) {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-intro,
+  .page-photo,
+  .page-facts {
+    animation: none;
+  }
+}
+
+/* ---------- Mobile menu in the top bar ---------- */
+.nav-menu > summary {
+  list-style: none;
+}
+.nav-menu > summary::-webkit-details-marker {
+  display: none;
+}

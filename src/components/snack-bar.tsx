@@ -1,75 +1,96 @@
 import Image from "next/image";
-import { Plus } from "lucide-react";
+import { Armchair, Bell, Wallet } from "lucide-react";
 import { menu } from "@/lib/data";
 import { Reveal } from "./reveal";
 
-/** The menu as bars that open in place, with pictures of the shelf beside it. */
+const how = [
+  { icon: Bell, title: "Позови или подойди", text: "Кнопка вызова на каждом месте или заказ у стойки." },
+  { icon: Armchair, title: "Принесём к месту", text: "Горячее за 5–7 минут, напитки сразу из холодильника." },
+  { icon: Wallet, title: "Оплата вместе с часами", text: "Заказы копятся на твоём месте, платишь один раз в конце." },
+];
+
+const photos = [
+  { src: "/images/drinks.jpg", alt: "Стена из банок энергетиков: Red Bull, Monster, Hell, Black, Tiger", cls: "col-span-2 aspect-[16/9]" },
+  { src: "/images/chips.jpg", alt: "Чипсы Pringles в тёплом свете", cls: "aspect-square" },
+  { src: "/images/doritos.jpg", alt: "Тарелка чипсов Doritos со вкусом сыра", cls: "aspect-square" },
+];
+
+/** The whole menu, every group open, set in columns; then how ordering works beside the shelf. */
 export function SnackBar() {
   return (
-    <section id="bar" aria-labelledby="bar-title" className="wrap section">
-      <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-12">
-        <div>
-          <Reveal as="h2" id="bar-title">
-            Снек-бар
+    <>
+      <section id="menu" aria-labelledby="menu-title" className="wrap section scroll-mt-4">
+        <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+          <Reveal as="h2" id="menu-title">
+            Меню
           </Reveal>
-          <Reveal as="p" order={1} className="mt-3 max-w-[48ch] text-soft">
-            Напитки и снеки приносим к месту: позови администратора или закажи у стойки. Оплата
-            вместе с часами.
+          <Reveal as="p" order={1} className="max-w-[52ch] text-soft">
+            {menu.reduce((n, g) => n + g.items.length, 0)} позиций в {menu.length} разделах. Цены за штуку, без
+            наценки за доставку к месту.
           </Reveal>
+        </div>
 
-          <Reveal order={2} className="mt-6 flex flex-col gap-1.5">
-            {menu.map((group, i) => (
-              <details key={group.title} className="menu-bar rounded-tile bg-surface" open={i === 0}>
-                <summary className="flex h-12 cursor-pointer items-center justify-between rounded-tile px-4 font-medium transition-colors duration-150 hover:bg-surface-2">
-                  {group.title}
-                  <Plus className="menu-plus size-5 text-neon" aria-hidden="true" />
-                </summary>
-                <ul className="flex flex-col gap-2.5 px-4 pb-4 pt-1">
-                  {group.items.map((item) => (
-                    <li key={item.name} className="flex items-baseline justify-between gap-4">
-                      <span>
-                        {item.name}
-                        {item.size && <span className="ml-2 text-small text-soft">{item.size}</span>}
-                      </span>
-                      <span className="shrink-0 tabular-nums">{item.price} ₽</span>
-                    </li>
-                  ))}
-                </ul>
-              </details>
+        <div className="columns-1 gap-3 md:columns-2 lg:columns-3">
+          {menu.map((group, i) => (
+            <Reveal
+              as="section"
+              key={group.title}
+              order={i % 3}
+              aria-label={group.title}
+              className="mb-3 break-inside-avoid rounded-tile bg-surface p-5"
+            >
+              <h3 className="text-lead">{group.title}</h3>
+              <ul className="mt-3 flex flex-col">
+                {group.items.map((item) => (
+                  <li key={item.name} className="flex items-baseline gap-3 border-t border-[#1f3a29] py-2.5 first:border-t-0">
+                    <span className="min-w-0 flex-1">
+                      {item.name}
+                      {item.size && <span className="ml-2 whitespace-nowrap text-small text-soft">{item.size}</span>}
+                    </span>
+                    <span className="shrink-0 font-medium tabular-nums">{item.price} ₽</span>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="order-title" className="wrap section">
+        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+          <div>
+            <Reveal as="h2" id="order-title">
+              Как заказать
+            </Reveal>
+            <ul className="mt-8 flex flex-col gap-5">
+              {how.map((h, i) => (
+                <Reveal as="li" key={h.title} order={i + 1} className="flex gap-4">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-2 text-neon">
+                    <h.icon className="size-5" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3 className="text-lead">{h.title}</h3>
+                    <p className="mt-1 text-small text-soft">{h.text}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </ul>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {photos.map((p, i) => (
+              <Reveal key={p.src} order={i + 1} className={`frame relative ${p.cls}`}>
+                <Image
+                  src={p.src}
+                  alt={p.alt}
+                  fill
+                  sizes={i === 0 ? "(min-width: 1024px) 560px, 100vw" : "(min-width: 1024px) 280px, 50vw"}
+                  className="object-cover"
+                />
+              </Reveal>
             ))}
-          </Reveal>
+          </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Reveal order={1} className="frame relative col-span-2 aspect-[16/10]">
-            <Image
-              src="/images/drinks.jpg"
-              alt="Стена из банок энергетиков: Red Bull, Monster, Hell, Black, Tiger"
-              fill
-              sizes="(min-width: 1024px) 560px, 100vw"
-              className="object-cover"
-            />
-          </Reveal>
-          <Reveal order={2} className="frame relative aspect-square">
-            <Image
-              src="/images/chips.jpg"
-              alt="Чипсы Pringles в тёплом свете"
-              fill
-              sizes="(min-width: 1024px) 280px, 50vw"
-              className="object-cover"
-            />
-          </Reveal>
-          <Reveal order={3} className="frame relative aspect-square">
-            <Image
-              src="/images/doritos.jpg"
-              alt="Тарелка чипсов Doritos со вкусом сыра"
-              fill
-              sizes="(min-width: 1024px) 280px, 50vw"
-              className="object-cover"
-            />
-          </Reveal>
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

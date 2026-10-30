@@ -1,13 +1,5 @@
 [
  {
-  "file": "public/images/pc-vip.jpg",
-  "title": "Ricer gaming PC with CPU watercooler",
-  "creator": "Benlisquare",
-  "license": "CC BY-SA 4.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Ricer_gaming_PC_with_CPU_watercooler.jpg"
- },
- {
   "file": "public/images/pc-pro.jpg",
   "title": "2025 Wnętrze komputera PC",
   "creator": "Jacek Halicki",
@@ -78,5 +70,29 @@
   "license": "CC BY 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
   "page": "https://commons.wikimedia.org/wiki/File:Nacho_Cheese_Flavor_Doritos_Ready_to_Party.jpg"
+ },
+ {
+  "file": "public/images/hall-main.jpg",
+  "title": "2020-03-08 10.25.33 PC bang in South Korea",
+  "creator": "MatthieuRicard",
+  "license": "CC0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "page": "https://commons.wikimedia.org/wiki/File:2020-03-08_10.25.33_PC_bang_in_South_Korea.jpg"
+ },
+ {
+  "file": "public/images/hall-bootcamp.jpg",
+  "title": "2020-03-08 08.21.18 PC bang in South Korea",
+  "creator": "MatthieuRicard",
+  "license": "CC0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "page": "https://commons.wikimedia.org/wiki/File:2020-03-08_08.21.18_PC_bang_in_South_Korea.jpg"
+ },
+ {
+  "file": "public/images/bar-counter.jpg",
+  "title": "2020-03-08 10.25.45 PC bang in South Korea",
+  "creator": "MatthieuRicard",
+  "license": "CC0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "page": "https://commons.wikimedia.org/wiki/File:2020-03-08_10.25.45_PC_bang_in_South_Korea.jpg"
  }
 ]

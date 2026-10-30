@@ -1,12 +1,13 @@
-// Content of the club: tiers, the private room, games for the FPS table and the snack-bar menu.
-// Prices of goods and FPS figures are sample values to confirm before launch.
+// Content of the club: computer classes, the three halls, games for the FPS table, the snack-bar
+// menu and the about section. Prices of goods, FPS figures, stats and reviews are sample values to
+// confirm before launch.
 
-export type ZoneId = "standard" | "pro" | "vip" | "room";
+export type ZoneId = "standard" | "pro" | "vip";
 
 export type Spec = { label: string; value: string };
 
 export type Tier = {
-  id: Exclude<ZoneId, "room">;
+  id: ZoneId;
   name: string;
   price: number;
   seats: { from: number; to: number };
@@ -20,7 +21,7 @@ export const tiers: Tier[] = [
     id: "standard",
     name: "Стандарт",
     price: 100,
-    seats: { from: 1, to: 24 },
+    seats: { from: 1, to: 25 },
     photo: {
       src: "/images/pc-standard.jpg",
       alt: "Чёрный игровой ПК со снятой боковой панелью: жидкостное охлаждение процессора, видеокарта и мягкая подсветка",
@@ -42,7 +43,7 @@ export const tiers: Tier[] = [
     id: "pro",
     name: "Про",
     price: 150,
-    seats: { from: 25, to: 42 },
+    seats: { from: 26, to: 45 },
     photo: {
       src: "/images/pc-pro.jpg",
       alt: "Белый игровой ПК с видеокартой GeForce RTX, жидкостным охлаждением и RGB-подсветкой вентиляторов",
@@ -64,7 +65,7 @@ export const tiers: Tier[] = [
     id: "vip",
     name: "VIP",
     price: 250,
-    seats: { from: 43, to: 50 },
+    seats: { from: 46, to: 51 },
     photo: {
       src: "/images/pc-vip-o11.jpg",
       alt: "Игровой ПК в стеклянном корпусе Lian Li O11 Dynamic с кастомным водяным охлаждением и зелёной подсветкой",
@@ -84,12 +85,77 @@ export const tiers: Tier[] = [
   },
 ];
 
-export const room = {
-  id: "room" as const,
-  name: "Приватная комната",
-  price: 500,
-  seats: 2,
+export const SEATS = 51;
+
+// The three halls. Each holds one class of computers; VIP rooms are booked whole.
+export type Hall = {
+  id: ZoneId;
+  name: string;
+  /** short count for cards, e.g. "25 мест" */
+  size: string;
+  /** what the booking sells and for how much */
+  price: number;
+  per: string;
+  photo: { src: string; alt: string };
+  lead: string;
+  perks: { title: string; text: string }[];
 };
+
+export const vipRooms = { count: 3, seats: 2, price: 500 };
+
+export const halls: Hall[] = [
+  {
+    id: "standard",
+    name: "Общий зал",
+    size: "25 мест",
+    price: 100,
+    per: "в час за место",
+    photo: {
+      src: "/images/hall-main.jpg",
+      alt: "Длинный зал с рядами игровых мест: мониторы, кожаные кресла и перегородки между столами",
+    },
+    lead: "Пять рядов по пять мест с компьютерами класса Стандарт. Для вечерней катки, сетевых игр и прихода компанией.",
+    perks: [
+      { title: "Ряды по пять", text: "Садитесь стаком рядом, без соседей посередине." },
+      { title: "180 Гц и 180+ FPS", text: "CS2, Valorant и Dota 2 на высоких настройках." },
+      { title: "Удобное место", text: "Кресло с регулировкой и столик под напиток у каждого ПК." },
+    ],
+  },
+  {
+    id: "pro",
+    name: "Буткемп",
+    size: "20 мест",
+    price: 150,
+    per: "в час за место",
+    photo: {
+      src: "/images/hall-bootcamp.jpg",
+      alt: "Приглушённый зал с игровыми креслами и мониторами, стоящими вплотную друг к другу",
+    },
+    lead: "Отдельный зал за стеклом: четыре стола по пять мест с компьютерами класса Про. Для команд, тренировок и турниров.",
+    perks: [
+      { title: "Стол на команду", text: "Пять мест в ряд под 5×5: вся команда рядом, никого чужого." },
+      { title: "Тишина для голоса", text: "Стеклянная перегородка отделяет буткемп от общего зала." },
+      { title: "240 FPS в шутерах", text: "RTX 5070 Ti и Ryzen 7 7800X3D, мониторы 27″." },
+    ],
+  },
+  {
+    id: "vip",
+    name: "VIP-комнаты",
+    size: "3 комнаты × 2",
+    price: vipRooms.price,
+    per: "в час за комнату",
+    photo: {
+      src: "/images/room-1.jpg",
+      alt: "Отдельная игровая комната: стол с мониторами, кресло и диван у стены",
+    },
+    lead: "Три закрытые комнаты на двоих с компьютерами класса VIP. Своя дверь, свой кондиционер, никого за спиной.",
+    perks: [
+      { title: "Своя дверь", text: "Комната закрывается, можно говорить в голос и ставить свою музыку." },
+      { title: "Шумоизоляция", text: "Из общего зала не слышно клавиатур, свой климат-контроль." },
+      { title: "RTX 5090", text: "Самое мощное железо клуба, Mini-LED мониторы 2K." },
+    ],
+  },
+];
 
 // FPS: native resolution of each tier's monitor, maximum settings, no frame generation.
 export type Game = {
@@ -203,6 +269,39 @@ export const menu: MenuGroup[] = [
     ],
   },
 ];
+
+// The about section: since when, how it is going, what guests say.
+export const about = {
+  since: 2024,
+  stats: [
+    { value: "2024", label: "открылись в марте" },
+    { value: "4,9", label: "на Яндекс Картах, 640 отзывов" },
+    { value: "38 000+", label: "игровых сессий" },
+    { value: "12", label: "турниров клуба" },
+  ],
+  promises: [
+    { title: "Железо не стареет", text: "Видеокарты и мониторы меняем каждые два года, в 2025 перешли на RTX 50." },
+    { title: "Чистое место", text: "После каждого гостя протираем клавиатуру, мышь и гарнитуру." },
+    { title: "Админ в зале 24/7", text: "Поможет со входом в аккаунт, поменяет гарнитуру, принесёт заказ." },
+  ],
+  reviews: [
+    {
+      name: "Артём",
+      when: "сентябрь 2025",
+      text: "Брали стол в буткемпе на скримы перед турниром. Пинг ровный, никто не орёт за спиной, админ сам предложил продлить на час.",
+    },
+    {
+      name: "Даша",
+      when: "июль 2025",
+      text: "Пришли вдвоём в VIP-комнату на ночь. Чисто, тихо, кресла удобные, доширак принесли прямо к столу.",
+    },
+    {
+      name: "Илья",
+      when: "февраль 2026",
+      text: "Хожу в общий зал после пар. 180 Гц, нормальные мыши, а не убитые, и бронь с сайта работает без звонков.",
+    },
+  ],
+};
 
 export const club = {
   // Sample contact details: replace before launch.

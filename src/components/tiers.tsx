@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { games, tiers } from "@/lib/data";
+import Link from "next/link";
+import { games, halls, tiers } from "@/lib/data";
 import { Reveal } from "./reveal";
 
 /** The three classes side by side: photo, price, frame rate in Cyberpunk 2077, what is inside. */
@@ -24,8 +25,9 @@ export function Tiers() {
             as="article"
             key={t.id}
             order={i}
-            aria-labelledby={`tier-${t.id}`}
-            className="flex flex-col rounded-tile bg-surface p-4"
+            aria-labelledby={`tier-${t.id}-title`}
+            id={`tier-${t.id}`}
+            className="flex scroll-mt-6 flex-col rounded-tile bg-surface p-4"
           >
             <div className="frame relative aspect-[4/3] w-full">
               <Image
@@ -38,13 +40,13 @@ export function Tiers() {
             </div>
 
             <div className="mt-5 flex items-baseline justify-between gap-4 px-1">
-              <h3 id={`tier-${t.id}`}>{t.name}</h3>
+              <h3 id={`tier-${t.id}-title`}>{t.name}</h3>
               <p className="text-lead font-semibold tabular-nums">
                 {t.price} ₽<span className="font-normal text-soft"> / час</span>
               </p>
             </div>
             <p className="mt-1 px-1 text-small text-soft">
-              Места {t.seats.from}–{t.seats.to}. {t.pitch}
+              {halls.find((h) => h.id === t.id)!.name}, места {t.seats.from}–{t.seats.to}. {t.pitch}
             </p>
 
             <p className="mx-1 mt-4 flex items-baseline gap-2 rounded-[12px] bg-black px-4 py-3">
@@ -61,9 +63,9 @@ export function Tiers() {
               ))}
             </dl>
 
-            <a href="#booking" data-zone={t.id} className="btn btn-neon mt-auto w-full">
-              Выбрать место
-            </a>
+            <Link href={`/booking?zone=${t.id}`} className="btn btn-neon mt-auto w-full">
+              {t.id === "vip" ? "Забронировать VIP-комнату" : "Выбрать место"}
+            </Link>
           </Reveal>
         ))}
       </div>

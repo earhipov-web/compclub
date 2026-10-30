@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Clock, MapPin, Phone } from "lucide-react";
+import { pages } from "./site-nav";
 import { club } from "@/lib/data";
 import credits from "@/lib/credits.json";
 import { Reveal } from "./reveal";
@@ -43,9 +45,9 @@ export function Contact() {
             ))}
           </ul>
         </div>
-        <a href="#booking" className="btn btn-neon justify-self-start">
+        <Link href="/booking" className="btn btn-neon justify-self-start">
           Забронировать место
-        </a>
+        </Link>
       </div>
     </section>
   );
@@ -58,8 +60,17 @@ export function SiteFooter() {
     <footer className="bg-surface">
       <div className="wrap flex flex-col gap-6 py-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <p className="text-lead font-semibold">CompClub</p>
+          <Link href="/" className="text-lead font-semibold">
+            CompClub
+          </Link>
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
+            {pages.map((p) => (
+              <li key={p.href}>
+                <Link className="text-soft hover:text-ink" href={p.href}>
+                  {p.label}
+                </Link>
+              </li>
+            ))}
             <li>
               <a className="text-soft hover:text-ink" href={club.telegram} target="_blank" rel="noopener noreferrer">
                 Telegram

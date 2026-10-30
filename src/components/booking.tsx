@@ -1,26 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type Ref } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
-import { club, room, tiers, type ZoneId } from "@/lib/data";
+import { club, halls, tiers, vipRooms, type ZoneId } from "@/lib/data";
 import { Keycap, KeyLegend } from "./keycap";
 
 // ---------- zones and seats ----------
 
-type Zone = { id: ZoneId; name: string; price: number; seats: string[]; cols: string };
+// The hall and the bootcamp sell seats, numbered across the club; a VIP room is booked whole.
+type Zone = { id: ZoneId; name: string; short: string; price: number; per: string; seats: string[] };
 
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
+const seatsOf = (id: ZoneId) => tiers.find((t) => t.id === id)!.seats;
 
-const zones: Zone[] = [
-  ...tiers.map((t) => ({
-    id: t.id,
-    name: t.name,
-    price: t.price,
-    seats: range(t.seats.from, t.seats.to),
-    cols: t.id === "vip" ? "grid-cols-4" : "grid-cols-6",
-  })),
-  { id: room.id, name: "Комната", price: room.price, seats: ["Комната"], cols: "grid-cols-1" },
-];
+const zones: Zone[] = halls.map((h) => ({
+  id: h.id,
+  name: h.id === "vip" ? "VIP-комната" : h.name,
+  short: h.id === "vip" ? "VIP" : h.id === "standard" ? "Зал" : h.name,
+  price: h.price,
+  per: h.id === "vip" ? "в час за двоих" : "в час",
+  seats: h.id === "vip" ? range(1, vipRooms.count) : range(seatsOf(h.id).from, seatsOf(h.id).to),
+}));
+
+const isRoom = (id: ZoneId) => id === "vip";
+const seatName = (id: ZoneId, seat: string) => (isRoom(id) ? `VIP-комната ${seat}` : `Место ${seat}`);
+/** club seat numbers inside VIP room n, e.g. "46–47" */
+const roomSeats = (n: number) => {
+  const first = seatsOf("vip").from + (n - 1) * vipRooms.seats;
+  return `${first}–${first + vipRooms.seats - 1}`;
+};
 
 const zoneById = (id: ZoneId) => zones.find((z) => z.id === id) ?? zones[0];
 
@@ -129,6 +138,18 @@ const formatPhone = (d: string) => `+7 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.s
 
 // ---------- component ----------
 
+/** What shows before the widget is built (and without scripts): the phone, at the widget's height. */
+export function BookingFallback({ hostRef }: { hostRef?: Ref<HTMLParagraphElement> }) {
+  return (
+    <p ref={hostRef} className="min-h-[880px] rounded-tile bg-surface p-6 lg:min-h-[760px]">
+      Бронь по телефону:{" "}
+      <a className="underline decoration-neon underline-offset-4" href={club.phoneHref}>
+        {club.phone}
+      </a>
+    </p>
+  );
+}
+
 export function Booking() {
   const [today, setToday] = useState<Date | null>(null);
   const [now, setNow] = useState<Date | null>(null);
@@ -176,20 +197,17 @@ export function Booking() {
     return () => io.disconnect();
   }, []);
 
-  // Links elsewhere on the page ("Выбрать место в классе Про", "Забронировать комнату") pick the zone.
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      const a = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-zone]");
-      const z = a?.dataset.zone as ZoneId | undefined;
-      if (z && zones.some((x) => x.id === z)) {
-        setZoneId(z);
-        setSeat(null);
-        setDone(null);
-      }
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
+  // a hall card or button links here as /booking?zone=pro: follow it, also within this page
+  const asked = useSearchParams().get("zone");
+  const [seenAsked, setSeenAsked] = useState<string | null>(null);
+  if (asked !== seenAsked) {
+    setSeenAsked(asked);
+    if (asked && zones.some((x) => x.id === asked)) {
+      setZoneId(asked as ZoneId);
+      setSeat(null);
+      setDone(null);
+    }
+  }
 
   const zone = zoneById(zoneId);
   const lastDay = today ? addDays(today, DAYS_AHEAD) : null;
@@ -209,23 +227,14 @@ export function Booking() {
   // A picked seat that became busy after changing the time no longer counts as chosen.
   const seat = picked && !busy.get(picked) ? picked : null;
 
-  if (!today || !view || !date || !lastDay) {
-    return (
-      <p ref={hostRef} className="min-h-[880px] rounded-tile bg-surface p-6 lg:min-h-[760px]">
-        Бронь по телефону:{" "}
-        <a className="underline decoration-neon underline-offset-4" href={club.phoneHref}>
-          {club.phone}
-        </a>
-      </p>
-    );
-  }
+  if (!today || !view || !date || !lastDay) return <BookingFallback hostRef={hostRef} />;
 
   const cells = monthGrid(view.y, view.m);
   const canPrev = view.y > today.getFullYear() || view.m > today.getMonth();
   const canNext = new Date(view.y, view.m + 1, 1) <= lastDay;
   const free = zone.seats.filter((s) => !busy.get(s)).length;
   const total = zone.price * duration;
-  const seatLabel = zone.id === "room" ? "Приватная комната" : `Место ${seat}`;
+  const seatLabel = seat ? seatName(zone.id, seat) : "";
   const timeLabel = hour !== null ? `${hh(hour)}–${hh(hour + duration)}` : "";
 
   const submit = (e: FormEvent) => {
@@ -253,10 +262,10 @@ export function Booking() {
       <div role="status" className="grid gap-8 rounded-tile bg-field p-[clamp(24px,4vw,56px)] lg:grid-cols-12">
         <div className="lg:col-span-7">
           <h3 className="text-h2">
-            {done.zone === "room" ? "Комната за тобой" : `Место ${done.seat} за тобой`}
+            {seatName(done.zone, done.seat)} за тобой
           </h3>
           <p className="lead mt-4">
-            {dayFmt.format(d)}, {hh(done.hour)}–{hh(done.hour + done.duration)}. Класс{" "}
+            {dayFmt.format(d)}, {hh(done.hour)}–{hh(done.hour + done.duration)}.{" "}
             {zoneById(done.zone).name}, {done.duration} ч, {done.total} ₽.
           </p>
           <p className="mt-4">
@@ -395,7 +404,7 @@ export function Booking() {
 
       {/* ---------- Where ---------- */}
       <div className="flex flex-col gap-1.5 lg:col-span-7">
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4" role="group" aria-label="Класс">
+        <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Зал">
           {zones.map((z) => {
             const on = z.id === zoneId;
             return (
@@ -411,9 +420,13 @@ export function Booking() {
                   setSeat(null);
                 }}
               >
-                <span className="relative text-[18px] font-semibold leading-tight">{z.name}</span>
+                {/* three keys share a phone's width: short name and the bare price there */}
+                <span className="relative text-[17px] font-semibold leading-tight sm:text-[18px]">
+                  <span className="sm:hidden">{z.short}</span>
+                  <span className="hidden sm:inline">{z.name}</span>
+                </span>
                 <span className={`relative text-[14px] leading-snug tabular-nums ${on ? "" : "opacity-70"}`}>
-                  {z.price} ₽ в час{z.id === "room" ? " за двоих" : ""}
+                  {z.price} ₽<span className="hidden sm:inline"> {z.per}</span>
                 </span>
               </Keycap>
             );
@@ -423,36 +436,43 @@ export function Booking() {
         <div className="rounded-tile bg-surface p-5 md:p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="font-sans text-[18px] font-medium tracking-normal">
-              {zone.id === "room" ? "Приватная комната на двоих" : `Места ${zone.seats[0]}–${zone.seats.at(-1)}`}
+              {isRoom(zone.id)
+                ? `${vipRooms.count} комнаты на двоих`
+                : `${zone.name}: места ${zone.seats[0]}–${zone.seats.at(-1)}`}
             </h3>
             <p className="text-[14px] text-soft" aria-live="polite">
-              {zone.id === "room"
-                ? free
-                  ? `Свободна ${shortDayFmt.format(date)}, ${timeLabel}`
-                  : "На это время занята"
+              {isRoom(zone.id)
+                ? `Свободно ${free} из ${zone.seats.length} на ${shortDayFmt.format(date)}, ${timeLabel}`
                 : `Свободно ${free} из ${zone.seats.length}`}
             </p>
           </div>
 
-          {zone.id === "room" ? (
-            <div className="mt-5">
-              <Keycap
-                state={seat === "Комната" ? "on" : busy.get("Комната") ? "busy" : "free"}
-                h={140}
-                r={14}
-                wide
-                end
-                pad={18}
-                onClick={() => setSeat("Комната")}
-              >
-                <span className="relative text-[20px] font-semibold">Два места, своя дверь</span>
-                <span className="relative text-[16px]">
-                  {busy.get("Комната") ? "Занята, выбери другое время" : "Нажми, чтобы выбрать комнату целиком"}
-                </span>
-              </Keycap>
+          {isRoom(zone.id) ? (
+            <div className="mt-5 grid gap-1.5 sm:grid-cols-3">
+              {zone.seats.map((s) => {
+                const taken = !!busy.get(s);
+                return (
+                  <Keycap
+                    key={s}
+                    state={seat === s ? "on" : taken ? "busy" : "free"}
+                    h={132}
+                    r={14}
+                    wide
+                    end
+                    pad={16}
+                    ariaLabel={`VIP-комната ${s}${taken ? ", занята" : ""}`}
+                    onClick={() => setSeat(s)}
+                  >
+                    <span className="relative text-[20px] font-semibold">Комната {s}</span>
+                    <span className="relative text-[14px] leading-snug">
+                      {taken ? "Занята в это время" : `Места ${roomSeats(Number(s))}, своя дверь`}
+                    </span>
+                  </Keycap>
+                );
+              })}
             </div>
           ) : (
-            <div className={`mt-5 grid gap-x-1.5 gap-y-2 ${zone.cols}`}>
+            <div className="mt-5 grid grid-cols-5 gap-x-1.5 gap-y-2">
               {zone.seats.map((s) => {
                 const taken = !!busy.get(s);
                 return (
@@ -497,7 +517,7 @@ export function Booking() {
               </>
             ) : (
               <span className="text-soft">
-                {hour === null ? "Выбери время начала." : zone.id === "room" ? "Выбери комнату выше." : "Выбери свободное место на схеме."}
+                {hour === null ? "Выбери время начала." : isRoom(zone.id) ? "Выбери свободную комнату выше." : "Выбери свободное место на схеме."}
               </span>
             )}
           </p>
@@ -542,7 +562,7 @@ export function Booking() {
           <div className="flex flex-wrap items-center justify-between gap-4 md:col-span-2">
             <p className="max-w-[40ch] text-[14px] text-soft">Оплата на месте, картой или наличными. Отменить можно звонком.</p>
             <button type="submit" className="btn btn-neon" disabled={!seat || hour === null}>
-              {seat ? (zone.id === "room" ? "Забронировать комнату" : `Забронировать место ${seat}`) : "Забронировать"}
+              {seat ? (isRoom(zone.id) ? `Забронировать комнату ${seat}` : `Забронировать место ${seat}`) : "Забронировать"}
             </button>
           </div>
         </form>
