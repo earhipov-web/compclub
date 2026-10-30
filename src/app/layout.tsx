@@ -33,11 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${text.variable} ${display.variable}`} suppressHydrationWarning>
-      <head>
-        {/* Marks that scripts run, so entrance animations may hide content until it scrolls in. */}
-        <script>{`document.documentElement.classList.add('js')`}</script>
-      </head>
+    <html lang="ru" className={`${text.variable} ${display.variable}`}>
       <body className="antialiased">{children}</body>
     </html>
   );

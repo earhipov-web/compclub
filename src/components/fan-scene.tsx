@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const BLADES = 9;
 // Timeline in seconds since navigation: the name comes first (CSS), then the fan's outline catches
@@ -20,11 +20,49 @@ const smooth = (x: number) => {
  * A black metal 120 mm case fan, seen straight on. The canvas is transparent: the RGB "lamp" behind it
  * is an HTML layer, so its matte light shows through the gaps between the blades and around the frame.
  */
+/**
+ * True when the browser can draw WebGL on a real GPU. A software renderer (SwiftShader, llvmpipe,
+ * which is also what page-speed tests run on) draws each frame on the CPU and blocks the page.
+ */
+function hasHardwareWebGL() {
+  try {
+    const c = document.createElement("canvas");
+    const gl = (c.getContext("webgl2", { failIfMajorPerformanceCaveat: true }) ||
+      c.getContext("webgl", { failIfMajorPerformanceCaveat: true })) as WebGLRenderingContext | null;
+    if (!gl) return false;
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return !/swiftshader|llvmpipe|softpipe|software|basic render/i.test(name);
+  } catch {
+    return false;
+  }
+}
+
+/** Resolves once the page has loaded and the browser has a quiet moment (or after a short cap). */
+function afterLoadIdle(cap: number) {
+  return new Promise<void>((resolve) => {
+    const idle = () =>
+      "requestIdleCallback" in window ? window.requestIdleCallback(() => resolve(), { timeout: cap }) : setTimeout(resolve, 1);
+    if (document.readyState === "complete") idle();
+    else window.addEventListener("load", idle, { once: true });
+  });
+}
+
 export function FanScene({ className = "" }: { className?: string }) {
   const host = useRef<HTMLDivElement>(null);
   const lamp = useRef<HTMLDivElement>(null);
+  // "3d" on devices with a GPU; "poster" (a still of the same lit fan) without one or with reduced motion
+  const [mode, setMode] = useState<"pending" | "3d" | "poster">("pending");
 
   useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- decided once, from the device
+    setMode(!reducedMotion && hasHardwareWebGL() ? "3d" : "poster");
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "3d") return;
     const el = host.current;
     const glow = lamp.current;
     if (!el || !glow) return;
@@ -32,15 +70,24 @@ export function FanScene({ className = "" }: { className?: string }) {
     let cleanup = () => {};
 
     (async () => {
+      // three.js is fetched and started after the page has loaded, so it never competes with it
+      await afterLoadIdle(800);
+      if (disposed) return;
       const THREE = await import("three");
       const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
       if (disposed) return;
 
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      // Phones and weak CPUs: fewer pixels and 30 frames a second. The fan is soft-lit and slow, so
+      // neither is visible, but each halves the work on the main thread and the GPU.
+      const light = window.matchMedia("(pointer: coarse)").matches || (navigator.hardwareConcurrency || 8) <= 4;
+      const minFrame = light ? 1000 / 30 - 2 : 0;
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const renderer = new THREE.WebGLRenderer({ antialias: !light, alpha: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, light ? 1.5 : 2));
       renderer.setClearColor(0x000000, 0);
+      // checking each shader for errors makes the page wait for the GPU to finish compiling it
+      // (about 0.75 s on an integrated GPU); the shaders are fixed, so skip it outside development
+      renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       el.appendChild(renderer.domElement);
@@ -48,7 +95,8 @@ export function FanScene({ className = "" }: { className?: string }) {
 
       const scene = new THREE.Scene();
       const pmrem = new THREE.PMREMGenerator(renderer);
-      const envTex = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
+      // a 128 px environment is plenty for soft reflections on black metal, at a quarter of the cost
+      const envTex = pmrem.fromScene(new RoomEnvironment(), 0.03, 0.1, 100, { size: 128 }).texture;
       scene.environment = envTex;
 
       // A narrow lens keeps the face flat, as in a product shot.
@@ -180,9 +228,12 @@ export function FanScene({ className = "" }: { className?: string }) {
       scene.add(back);
 
       // ---------- sizing: the fan fills the stage height (the stage is 1.05 × the fan) ----------
+      // setSize reallocates the drawing buffer on the GPU, so it runs only when the size really changes
+      let sized = "";
       const resize = () => {
         const w = el.clientWidth, h = el.clientHeight;
-        if (!w || !h) return;
+        if (!w || !h || `${w}x${h}` === sized) return;
+        sized = `${w}x${h}`;
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         const fanPx = h / 1.05;
@@ -190,7 +241,6 @@ export function FanScene({ className = "" }: { className?: string }) {
         camera.position.set(0, 0, visibleH / (2 * Math.tan((camera.fov * Math.PI) / 360)));
         camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
-        if (reduced) renderer.render(scene, camera);
       };
       resize();
       const ro = new ResizeObserver(resize);
@@ -198,6 +248,7 @@ export function FanScene({ className = "" }: { className?: string }) {
 
       // ---------- loop ----------
       let visible = true;
+      let ready = false;
       const io = new IntersectionObserver(([e]) => {
         visible = e.isIntersecting;
         if (visible) start();
@@ -211,14 +262,19 @@ export function FanScene({ className = "" }: { className?: string }) {
       let last = performance.now();
       let raf = 0;
 
+      let lastGlow = "";
       const frame = (now: number) => {
         raf = 0;
+        if (minFrame && now - last < minFrame) {
+          if (visible && !disposed && document.visibilityState === "visible") raf = requestAnimationFrame(frame);
+          return;
+        }
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
         const t = now / 1000 - shift;
-        const o = reduced ? 1 : smooth((t - OUTLINE_START) / (OUTLINE_END - OUTLINE_START));
-        const l = reduced ? 1 : smooth((t - LAMP_START) / (LAMP_END - LAMP_START));
-        const spin = reduced ? 0 : SPIN * smooth((t - LAMP_START) / 2.6);
+        const o = smooth((t - OUTLINE_START) / (OUTLINE_END - OUTLINE_START));
+        const l = smooth((t - LAMP_START) / (LAMP_END - LAMP_START));
+        const spin = SPIN * smooth((t - LAMP_START) / 2.6);
         const hue = (t * 0.05) % 1;
 
         angle -= spin * dt;
@@ -232,25 +288,29 @@ export function FanScene({ className = "" }: { className?: string }) {
         back.intensity = 1400 * l;
         lipMat.color.copy(c.setHSL((hue + 0.5) % 1, 1, 0.5)).multiplyScalar(0.15 * o + 0.85 * l);
 
-        // the lamp behind: a faint backlight during the outline, then it comes up to full
-        glow.style.opacity = String(0.1 * o + 0.9 * l);
-        glow.style.setProperty("--lamp", String(0.72 + 0.28 * l));
+        // the lamp behind: a faint backlight during the outline, then it comes up to full;
+        // written only while it changes, so the steady state costs no style work
+        const g = `${(0.1 * o + 0.9 * l).toFixed(3)}|${(0.72 + 0.28 * l).toFixed(3)}`;
+        if (g !== lastGlow) {
+          lastGlow = g;
+          const [op, sc] = g.split("|");
+          glow.style.opacity = op;
+          glow.style.setProperty("--lamp", sc);
+        }
 
         renderer.render(scene, camera);
-        if (visible && !disposed && document.visibilityState === "visible" && !(reduced && t > 0.2)) {
+        if (visible && !disposed && document.visibilityState === "visible") {
           raf = requestAnimationFrame(frame);
         }
       };
       const start = () => {
-        if (!raf && !disposed) {
+        if (ready && !raf && !disposed) {
           last = performance.now();
           raf = requestAnimationFrame(frame);
         }
       };
       const onVis = () => document.visibilityState === "visible" && start();
       document.addEventListener("visibilitychange", onVis);
-      start();
-
       cleanup = () => {
         cancelAnimationFrame(raf);
         ro.disconnect();
@@ -268,13 +328,29 @@ export function FanScene({ className = "" }: { className?: string }) {
         renderer.dispose();
         renderer.domElement.remove();
       };
+
+      // compile the shaders off the main thread where the browser allows it, so the first frame
+      // does not stall the page
+      await renderer.compileAsync(scene, camera).catch(() => {});
+      ready = true;
+      if (!disposed) start();
     })();
 
     return () => {
       disposed = true;
       cleanup();
     };
-  }, []);
+  }, [mode]);
+
+  if (mode === "poster") {
+    return (
+      <div className={className} aria-hidden="true">
+        {/* the same lit fan rendered once, glow included; it comes in on the same timeline */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- a fixed-size still, already optimised */}
+        <img src="/images/fan-poster.webp" alt="" width={960} height={960} decoding="async" className="fan-poster" />
+      </div>
+    );
+  }
 
   return (
     <div className={className} aria-hidden="true">

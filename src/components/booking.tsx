@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { club, room, tiers, type ZoneId } from "@/lib/data";
 import { Keycap, KeyLegend } from "./keycap";
@@ -137,23 +137,43 @@ export function Booking() {
   const [hour, setHour] = useState<number | null>(null);
   const [duration, setDuration] = useState(2);
   const [zoneId, setZoneId] = useState<ZoneId>("standard");
-  const [seat, setSeat] = useState<string | null>(null);
+  const [picked, setSeat] = useState<string | null>(null);
   const [saved, setSaved] = useState<Saved[]>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const [done, setDone] = useState<(Saved & { name: string; phone: string; code: string; total: number }) | null>(null);
 
-  // Dates depend on the visitor's clock, so they are set after mount.
+  // Dates depend on the visitor's clock, so they are set on the client. The widget (80+ keys) is
+  // built only when the section comes within a screen and a half of view, not during page load.
+  const hostRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    const n = new Date();
-    const t = startOfDay(n);
-    setNow(n);
-    setToday(t);
-    setDate(t);
-    setView({ y: t.getFullYear(), m: t.getMonth() });
-    setHour(Math.min(n.getHours() + 1, 23));
-    setSaved(readSaved());
+    const start = () => {
+      const n = new Date();
+      const t = startOfDay(n);
+      setNow(n);
+      setToday(t);
+      setDate(t);
+      setView({ y: t.getFullYear(), m: t.getMonth() });
+      setHour(Math.min(n.getHours() + 1, 23));
+      setSaved(readSaved());
+    };
+    const el = hostRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      start();
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          io.disconnect();
+          start();
+        }
+      },
+      { rootMargin: "150% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   // Links elsewhere on the page ("Выбрать место в классе Про", "Забронировать комнату") pick the zone.
@@ -186,14 +206,12 @@ export function Booking() {
     return map;
   }, [zone, date, hour, duration, saved]);
 
-  // Drop a seat that became busy after changing the time.
-  useEffect(() => {
-    if (seat && busy.get(seat)) setSeat(null);
-  }, [busy, seat]);
+  // A picked seat that became busy after changing the time no longer counts as chosen.
+  const seat = picked && !busy.get(picked) ? picked : null;
 
   if (!today || !view || !date || !lastDay) {
     return (
-      <p className="rounded-tile bg-surface p-6">
+      <p ref={hostRef} className="min-h-[880px] rounded-tile bg-surface p-6 lg:min-h-[760px]">
         Бронь по телефону:{" "}
         <a className="underline decoration-neon underline-offset-4" href={club.phoneHref}>
           {club.phone}

@@ -56,7 +56,9 @@ export function Keycap({ state, h, r, wide, end, pad, fs = 14, fw = 500, strike,
   const bx = wide ? 6 : 4;
   // the release runs after the click may have changed the key's state, so it reads the latest rest
   const restRef = useRef(rest);
-  restRef.current = rest;
+  useEffect(() => {
+    restRef.current = rest;
+  }, [rest]);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const press = () => {
