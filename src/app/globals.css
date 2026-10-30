@@ -460,9 +460,22 @@
     }
   }
 }
+/* no scroll timelines (older Safari): ContainerScroll writes the progress into --csp on scroll */
 @supports not (animation-timeline: view()) {
   .cs-card {
+    transform: rotateX(calc((1 - var(--csp, 1)) * 20deg))
+      scale(calc(var(--cs-from) + (var(--cs-to) - var(--cs-from)) * var(--csp, 1)));
+  }
+  .cs-header {
+    transform: translateY(calc(var(--csp, 1) * -100px));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-card {
     transform: scale(var(--cs-to));
+  }
+  .cs-header {
+    transform: none;
   }
 }
 

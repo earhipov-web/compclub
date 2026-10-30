@@ -1,12 +1,15 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useRef } from "react";
 
 /**
  * The card tilts back and scales, then straightens as the section scrolls into view, while the
  * title rises. Same geometry as the original framer-motion component (rotateX 20° → 0, scale
  * 1.05 → 1, or 0.7 → 0.9 on phones, title up 100 px), but driven by CSS scroll-driven animations
  * (`animation-timeline: view()`), so the compositor runs it and no JavaScript works on each scroll
- * frame. Browsers without scroll timelines show the card straight; reduced motion does too.
- * Styles: `.cs-*` in globals.css.
+ * frame. Browsers without scroll timelines get the same motion from one scroll listener that writes
+ * the progress into `--csp`. Reduced motion shows the card straight. Styles: `.cs-*` in globals.css.
+ * No ancestor may set overflow hidden/auto: that makes it the timeline's scroller and freezes the card.
  */
 export const ContainerScroll = ({
   titleComponent,
@@ -15,8 +18,38 @@ export const ContainerScroll = ({
   titleComponent: string | React.ReactNode;
   children: React.ReactNode;
 }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || CSS.supports("animation-timeline: view()")) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    // the CSS range, by hand: from entry 10% to cover 60%
+    const update = () => {
+      frame = 0;
+      const { top, height } = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const start = 0.1 * Math.min(height, vh);
+      const end = 0.6 * (vh + height);
+      const p = Math.min(1, Math.max(0, (vh - top - start) / (end - start)));
+      el.style.setProperty("--csp", p.toFixed(3));
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
+
   return (
-    <div className="cs-root h-[44rem] md:h-[60rem] flex items-center justify-center relative p-2 md:p-20">
+    <div ref={ref} className="cs-root h-[44rem] md:h-[60rem] flex items-center justify-center relative p-2 md:p-20">
       <div className="py-10 md:py-24 w-full relative" style={{ perspective: "1000px" }}>
         <Header titleComponent={titleComponent} />
         <Card>{children}</Card>

@@ -4,7 +4,7 @@ import { ContainerScroll } from "@/components/ui/container-scroll-animation";
 /** The hall shown on a screen that tilts upright as it scrolls into view. */
 export function HallScroll() {
   return (
-    <section aria-labelledby="hall-title" className="flex flex-col overflow-hidden">
+    <section aria-labelledby="hall-title" className="flex flex-col overflow-clip">
       <ContainerScroll
         titleComponent={
           <div className="px-[var(--gutter)] pb-8">
