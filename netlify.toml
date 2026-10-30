@@ -5,3 +5,17 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Scripts, styles and pictures come straight from the CDN, past the headers() in next.config.ts:
+# give them the same no-sniffing and same-origin rules as the pages.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Cross-Origin-Resource-Policy = "same-origin"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Cross-Origin-Resource-Policy = "same-origin"

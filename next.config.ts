@@ -9,12 +9,14 @@ const isDev = process.env.NODE_ENV !== "production";
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  // React attaches handlers itself, so no onclick="…" attribute is ever needed
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
   `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
   "worker-src 'self' blob:",
-  "frame-src 'self'",
+  "frame-src 'none'",
   "manifest-src 'self'",
   "media-src 'self'",
   "object-src 'none'",
